@@ -34,6 +34,12 @@ my @lists = @{$project->{lists}};
 foreach my $dev (@devs) {
 
     my $d = getdev($dev);
+
+    unless ( $d->{name} ) {
+        warn "Data missing for $dev\n";
+        next;
+    }
+
     print "\n============\n" . $d->{name} . "\n\n";
 
     # Count posts to the various mailing lists
