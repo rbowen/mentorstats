@@ -13,19 +13,20 @@ lists:
     - dev
     - user
 devs:
-   - nshuplet
-   - pdeasy
+   - rbowen
+   - bbarker
+   - devmcdevface
 repo: activemq
 
 Devs are defined in yaml files in $DATA/devs and look like:
 
-pdeasy.yml
+bbarker.yml
 ----------
 
-name: Patrick Deasy
-apacheid: pdeasy
-email: pa-deasy@hotmail.com
-githubid: pa-deasy
+name: Bob Barker
+apacheid: bbarker
+email: bbarker@hotmail.com
+githubid: bbarker
 
 You'll need to define $DATA in `mentorstats` to point to wherever you
 stash the data files.
