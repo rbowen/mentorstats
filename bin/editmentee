@@ -7,8 +7,10 @@ my @args   = @ARGV;
 my $editor = $ENV{EDITOR} || 'vim';
 
 my $d = $args[0];
-if ($who) {
-    exec "$editor " . $DATA . '/devs/' . $d . '.yml';
+
+warn "Looking for $DATA".'/devs/'.$d.'.yml';
+if (-e $DATA . '/devs/' . $d . '.yml' ) {
+    exec "$editor $DATA" . '/devs/' . $d . ".yml";
 } else {
     print "No such user.";
 }

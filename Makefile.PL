@@ -15,6 +15,7 @@ WriteMakefile(
         qw(
           bin/mentorstats
           bin/addmentee
+          bin/editmentee
         )
     ],
 
