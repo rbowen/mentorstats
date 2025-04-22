@@ -2,11 +2,10 @@
 use 5;
 use warnings;
 use YAML::Tiny;
-use LWP::UserAgent;
+use LWP::UserAgent; # For fetching stats from lists.apache.org
 use JSON;
-use Data::Dumper;
 use Pithub::PullRequests;
-our $DATA = "/Users/rcbowen/Dropbox/mentoring";
+use MentorStats;
 
 my $proj = shift || help();
 
@@ -16,7 +15,7 @@ my $ua = LWP::UserAgent->new;
 # verify_hostname => 0
 # );
 
-my $project = fetchproject( $proj );
+my $project = getproject( $proj );
 print $project->{name} . "\n";
 
 # Only do this once, filter per contributor
@@ -76,7 +75,9 @@ foreach my $dev (@devs) {
     # Next, see what their GitHub stats look like
     my @myprs;
     foreach my $pull ( @{$allprs} ) {
-        if ( $pull->{head}->{user}->{login} eq $d->{githubid} ) {
+        if ( defined( $pull->{head}->{user} )
+            && ( $pull->{head}->{user}->{login} eq $d->{githubid} ) )
+        {
             push @myprs, $pull;
         }
     }
@@ -88,29 +89,6 @@ foreach my $dev (@devs) {
             print $pull->{html_url} . " (" . $pull->{created_at} . ")\n";
         }
     }
-}
-
-# Read project info from YAML
-sub fetchproject {
-    my $project = shift;
-    my $pdir = $DATA . '/projects';
-
-    # Slurp
-    my $f = $DATA . '/projects/' . $project . '.yml';
-    my $p = YAML::Tiny->read( $f );
-    return $p->[0];
-}
-
-# Read dev info from YAML
-sub getdev {
-    my $devname = shift;
-
-    my $ddir = $DATA . '/devs';
-    opendir ( DIR, $ddir ) or die "Could not open $ddir\n";
-
-    my $f = $DATA . '/devs/' . $devname . '.yml';
-    my $d = YAML::Tiny->read($f);
-    return $d->[0];
 }
 
 sub help {

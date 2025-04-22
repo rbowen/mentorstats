@@ -1,0 +1,62 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use Getopt::Long qw(GetOptions);
+use YAML::Tiny;
+use MentorStats;
+
+
+my $help = 0;
+my ($name, $amzid, $ghid, $proj);
+
+GetOptions(
+    "help"    => \$help,
+    "amzid=s" => \$amzid,
+    "ghid=s"  => \$ghid,
+    "name=s"  => \$name,
+    "proj=s"  => \$proj,
+) or help();
+
+help() if $help;
+help() unless ($name && $amzid && $ghid);
+my $f = $DATA . '/devs/' . $amzid. '.yml';
+my $editor = $ENV{EDITOR} || 'vim';
+
+# Check if you already have this record
+if ( getdev( $amzid ) ) {
+    print "Record already exists\n";
+    sleep(1);
+    exec "$editor $f";
+} else {
+
+    # Create starter record with default values
+    my $yaml = YAML::Tiny->new(
+        {
+            name     => $name,
+            email    => $amzid . '@' . $DOMAIN,
+            amazonid => $amzid,
+            githubid => $ghid,
+
+        }
+    );
+
+    $yaml->write( $f );
+
+    exec "$editor $f";
+} 
+
+sub help {
+    
+print qq~
+Usage:
+
+    addmentee -n "Bob Marley" -a "amazonid" -g "githubid"
+    addmentee --name "Bob Marley" --alias "bmarley" --ghid "bbmarleybb"
+
+    ... then finish updating the yaml file
+
+~;
+exit();
+
+}
