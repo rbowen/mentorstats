@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use MentorStats;
+
+my @args   = @ARGV;
+my $editor = $ENV{EDITOR} || 'vim';
+
+my $d = $args[0];
+if ($who) {
+    exec "$editor " . $DATA . '/devs/' . $d . '.yml';
+} else {
+    print "No such user.";
+}
