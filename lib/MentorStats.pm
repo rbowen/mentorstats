@@ -33,6 +33,7 @@ sub getproject {
 sub getdev {
     my $devname = shift;
     my $f = $DATA . '/devs/' . $devname . '.yml';
+    return 0 unless -e $f;
     my $d = YAML::Tiny->read($f);
     return $d->[0];
 }

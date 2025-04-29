@@ -6,6 +6,7 @@ use LWP::UserAgent; # For fetching stats from lists.apache.org
 use JSON;
 use Pithub::PullRequests;
 use MentorStats;
+use Data::Dumper;
 
 my $proj = shift || help();
 
@@ -16,18 +17,34 @@ my $ua = LWP::UserAgent->new;
 # );
 
 my $project = getproject( $proj );
+
+my @repos = @{$project->{repos}};
+
 print $project->{name} . "\n";
 
-# Only do this once, filter per contributor
-my $p   = Pithub::PullRequests->new;
-my $prs = $p->list(
-    user => 'apache',
-    repo => $project->{repo},
-    state => 'open',
-);
-my $allprs = JSON->new->decode( $prs->response()->{_content} );
+# Fetch all PRs, across all open repos
+my $p = Pithub::PullRequests->new;
+my @prs; # Accumulate across all repos
 
-my @devs =  @{$project->{devs}};
+foreach my $repo (@repos) {
+
+    my $prs = $p->list(
+        user => 'apache',
+        repo => $repo,
+        state => 'open',
+    );
+
+    my $allprs = JSON->new->decode( $prs->response()->{_content} );
+
+    foreach my $pull ( @{$allprs} ) {
+        if ( defined( $pull->{head}->{user} ) ) {
+            push @prs, $pull;
+        }
+    }
+}
+
+# Check mailing list activity
+my @devs =  sort ( @{$project->{devs}} );
 my @lists = @{$project->{lists}};
 
 foreach my $dev (@devs) {
@@ -74,9 +91,8 @@ foreach my $dev (@devs) {
 
     # Next, see what their GitHub stats look like
     my @myprs;
-    foreach my $pull ( @{$allprs} ) {
-        if ( defined( $pull->{head}->{user} )
-            && ( $pull->{head}->{user}->{login} eq $d->{githubid} ) )
+    foreach my $pull ( @prs ) {
+        if ( $pull->{head}->{user}->{login} eq $d->{githubid} )
         {
             push @myprs, $pull;
         }
@@ -114,4 +130,5 @@ ENDEND
     print "\n";
     exit();
 }
+
 

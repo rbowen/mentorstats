@@ -16,7 +16,9 @@ activemq.yml
        - rbowen
        - bbarker
        - devmcdevface
-    repo: activemq
+    repos:
+       - activemq
+       - activemq-python
 
 Devs are defined in yaml files in $DATA/devs and look like:
 
@@ -24,7 +26,7 @@ bbarker.yml
 ----------
 
     name: Bob Barker
-    apacheid: bbarker
+    amazonid: bbarker
     email: bbarker@hotmail.com
     githubid: bbarker
 
