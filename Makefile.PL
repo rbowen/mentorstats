@@ -16,6 +16,7 @@ WriteMakefile(
           bin/mentorstats
           bin/addmentee
           bin/editmentee
+          bin/openprs
         )
     ],
 

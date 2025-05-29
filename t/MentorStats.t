@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
+use Test::More tests => 8;
 BEGIN { use_ok('MentorStats') };
 
 use_ok('YAML::Tiny');
@@ -17,6 +17,7 @@ ok( -e $DATA, 'Data directory exists');
 ok( -e "$DATA/devs", 'Devs directory exists');
 ok( -e "$DATA/projects", 'Projects directory exists');
 
-ok( my $d = getdev('rbowen'), "Can fetch a person");
-ok( my $p = getproject('iceberg'), "Can fetch a project");
+ok( my $d = MentorStats::getdev('rbowen'), "Can fetch a person");
+ok( my $p = MentorStats::getproject('iceberg'), "Can fetch a project");
+ok( my $pr = MentorStats::getprs( 'spark' ), "Can fetch PRs from GitHub.");
 

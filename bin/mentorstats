@@ -4,105 +4,98 @@ use warnings;
 use YAML::Tiny;
 use LWP::UserAgent; # For fetching stats from lists.apache.org
 use JSON;
-use Pithub::PullRequests;
 use MentorStats;
 use Data::Dumper;
 
 my $proj = shift || help();
 
 my $ua = LWP::UserAgent->new;
-# $ua->ssl_opts(
-# SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE, 
-# verify_hostname => 0
-# );
 
-my $project = getproject( $proj );
-
+my $project = MentorStats::getproject( $proj );
 my @repos = @{$project->{repos}};
 
 print $project->{name} . "\n";
 
 # Fetch all PRs, across all open repos
-my $p = Pithub::PullRequests->new;
-my @prs; # Accumulate across all repos
-
-foreach my $repo (@repos) {
-
-    my $prs = $p->list(
-        user => 'apache',
-        repo => $repo,
-        state => 'open',
-    );
-
-    my $allprs = JSON->new->decode( $prs->response()->{_content} );
-
-    foreach my $pull ( @{$allprs} ) {
-        if ( defined( $pull->{head}->{user} ) ) {
-            push @prs, $pull;
-        }
-    }
-}
+my @prs = MentorStats::getprs( @repos );
 
 # Check mailing list activity
 my @devs =  sort ( @{$project->{devs}} );
 my @lists = @{$project->{lists}};
 
-foreach my $dev (@devs) {
+if (@lists) { # Only do this for ASF projects with mailing lists
+    foreach my $dev (@devs) {
 
-    my $d = getdev($dev);
+        my $d = MentorStats::getdev($dev);
+        my @posts;
 
-    unless ( $d->{name} ) {
-        warn "Data missing for $dev\n";
-        next;
-    }
+        unless ( $d->{name} ) {
+            warn "Data missing for $dev\n";
+            next;
+        }
 
-    print "\n============\n" . $d->{name} . "\n\n";
+        # Count posts to the various mailing lists
+# TODO: Move this into MentorStats.pm
+        foreach my $list (@lists) {
+            my $mlurl =
+                "https://lists.apache.org/api/stats.lua?list="
+              . $list
+              . "&d=lte=3M"
+              . "&domain="
+              . $project->{domain}
+              . ".apache.org&header_from="
+              . $d->{email};
 
-    # Count posts to the various mailing lists
-    foreach my $list (@lists) {
-        my $mlurl = "https://lists.apache.org/api/stats.lua?list="
-          . $list
-          . "&domain="
-          . $project->{domain}
-          . ".apache.org&header_from="
-          . $d->{email};
+            my $req = HTTP::Request->new( GET => $mlurl );
+            my $res = $ua->request($req);
 
-        my $req = HTTP::Request->new( GET => $mlurl );
-        my $res = $ua->request($req);
+            # check the outcome
+            if ( $res->is_success ) {
+                my $content = $res->decoded_content;
+                my $stats   = JSON->new->decode($content);
 
-        # check the outcome
-        if ( $res->is_success ) {
-            my $content = $res->decoded_content;
-            my $stats   = JSON->new->decode($content);
+                # Have they ever posted to this list?
+                if ( %{ $stats->{active_months} } ) {
 
-            # Have they ever posted to this list?
-            if ( %{ $stats->{active_months} } ) {
-
-                print $list . '@' . $project->{domain} . ".apache.org:\n";
-                foreach my $k ( sort ( keys %{ $stats->{active_months} } ) ) {
-                    print $k . ": " . $stats->{active_months}->{$k} . "\n";
+                    push @posts, $list . '@' . $project->{domain} . ".apache.org:";
+                    foreach my $k ( sort ( keys %{ $stats->{active_months} } ) )
+                    {
+                        push @posts, $k . ": " . $stats->{active_months}->{$k};
+                    }
                 }
+            } else {
+                warn "Error: " . $res->status_line . "\n";
             }
-        } else {
-            warn "Error: " . $res->status_line . "\n";
+
         }
 
-    }
-
-    # Next, see what their GitHub stats look like
-    my @myprs;
-    foreach my $pull ( @prs ) {
-        if ( $pull->{head}->{user}->{login} eq $d->{githubid} )
-        {
-            push @myprs, $pull;
+        # Next, see what their GitHub stats look like
+        my @myprs;
+        foreach my $pull (@prs) {
+            if ( $pull->{head}->{user}->{login} eq $d->{githubid} ) {
+                push @myprs, $pull;
+            }
         }
-    }
 
-    # Only display this section if there are any.
-    if (@myprs) {
-        print "\nOpen PRs:\n";
-        foreach my $pull (@myprs) {
-            print $pull->{html_url} . " (" . $pull->{created_at} . ")\n";
+        # Skip people with no activity
+        if ( @posts || @myprs ) {
+            print "\n" . $d->{name} . "\n============\n\n";
+        }
+
+        # Have they ever posted to the mailing list?
+        if (@posts) {
+            foreach my $p ( @posts ) {
+                print $p . "\n";
+            }
+            print "\n";
+        }
+
+        # Only display this section if there are any.
+        if (@myprs) {
+            print "Open PRs:\n";
+            foreach my $pull (@myprs) {
+                print $pull->{html_url} . " (" . $pull->{created_at} . ")\n";
+            }
         }
     }
 }

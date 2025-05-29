@@ -24,7 +24,7 @@ my $f = $DATA . '/devs/' . $amzid. '.yml';
 my $editor = $ENV{EDITOR} || 'vim';
 
 # Check if you already have this record
-if ( getdev( $amzid ) ) {
+if ( MentorStats::getdev( $amzid ) ) {
     print "Record already exists\n";
     sleep(1);
     exec "$editor $f";

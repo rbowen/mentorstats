@@ -1,0 +1,47 @@
+#!perl
+use 5;
+use warnings;
+use MentorStats;
+use Data::Dumper;
+
+my $proj = shift || help();
+my $project = MentorStats::getproject( $proj );
+my @repos = @{$project->{repos}};
+
+my @prs = MentorStats::getprs( @repos );
+print $project->{name} . ": " . @prs . " open PRs:\n\n";
+
+foreach my $pr ( @prs ) {
+
+    print 
+    "[".$pr->{number}."] ".
+    $pr->{title} . 
+    " (" .  $pr->{user}->{login} . ") " .
+    $pr->{html_url} .
+    "\n"
+    ;
+
+}
+
+sub help {
+    print <<'ENDEND';
+Displays open PRs which are not in DRAFT.
+
+ENDEND
+
+    print "\nData is stored in $DATA\n";
+
+    print "Usage: $0 project_name\n\n";
+    print "Available projects:\n";
+
+    my $pdir = $DATA . '/projects';
+    opendir ( DIR, $pdir ) or die "Could not open $pdir\n";
+
+    while ( my $projfile = readdir(DIR) ) {
+        next unless $projfile =~ m/\.yml$/;
+        $projfile =~ s/\.yml//;
+        print "* " .$projfile."\n";
+    }
+    print "\n";
+    exit();
+}

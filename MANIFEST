@@ -1,6 +1,7 @@
 bin/addmentee
 bin/mentorstats
 bin/editmentee
+bin/openprs
 Changes
 lib/MentorStats.pm
 Makefile.PL
